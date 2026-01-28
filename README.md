@@ -1,46 +1,46 @@
-# TaskFlow - Collaborative Task Management
+# TaskFlow - Gestión de Tareas Colaborativa
 
 ![TaskFlow Banner](https://via.placeholder.com/1200x300/6200ee/ffffff?text=TaskFlow)
 
-TaskFlow is a full-stack collaborative task management application built with Go + Gin backend and React Native + Expo mobile app.
+TaskFlow es una aplicación de gestión de tareas colaborativa full-stack construida con un backend en Go + Gin y una aplicación móvil en React Native + Expo.
 
-## 🚀 Features
+## 🚀 Características
 
 ### Backend (Go + Gin)
-- ✅ RESTful API with JWT authentication
-- ✅ PostgreSQL database with GORM
-- ✅ WebSocket for real-time notifications
-- ✅ Swagger/OpenAPI documentation
-- ✅ Unit tests with >80% coverage
-- ✅ Docker & docker-compose ready
+- ✅ API RESTful con autenticación JWT
+- ✅ Base de datos PostgreSQL con GORM
+- ✅ WebSocket para notificaciones en tiempo real
+- ✅ Documentación Swagger/OpenAPI
+- ✅ Tests unitarios con >80% de cobertura
+- ✅ Listo para Docker y docker-compose
 
-### Mobile App (React Native + Expo)
-- ✅ MVVM architecture
-- ✅ Dark mode support
-- ✅ Offline mode with auto-sync
-- ✅ Biometric authentication (Face ID / Touch ID / Fingerprint)
-- ✅ Real-time updates via WebSocket
-- ✅ Material Design with React Native Paper
-- ✅ Unit tests
+### App Móvil (React Native + Expo)
+- ✅ Arquitectura MVVM
+- ✅ Soporte para modo oscuro
+- ✅ Modo offline con sincronización automática
+- ✅ Autenticación biométrica (Face ID / Touch ID / Huella)
+- ✅ Actualizaciones en tiempo real vía WebSocket
+- ✅ Material Design con React Native Paper
+- ✅ Tests unitarios
 
-## 📋 Requirements
+## 📋 Requisitos
 
 ### Backend
 - Go 1.21+
 - PostgreSQL 15+
-- Docker & Docker Compose (optional)
+- Docker y Docker Compose (opcional)
 
-### Mobile
+### Móvil
 - Node.js 18+
-- npm or yarn
+- npm o yarn
 - Expo CLI
-- iOS Simulator (macOS) or Android Emulator
+- Simulador iOS (macOS) o Emulador Android
 
-## 🏗️ Architecture
+## 🏗️ Arquitectura
 
 ```
 ┌─────────────────┐         ┌──────────────────┐
-│   Mobile App    │◄───────►│   Backend API    │
+│     App Móvil   │◄───────►│   Backend API    │
 │  (React Native) │  HTTP   │   (Go + Gin)     │
 │                 │  + WS   │                  │
 └─────────────────┘         └──────────────────┘
@@ -48,177 +48,177 @@ TaskFlow is a full-stack collaborative task management application built with Go
         │ AsyncStorage              │ GORM
         ▼                            ▼
 ┌─────────────────┐         ┌──────────────────┐
-│  Local Cache    │         │   PostgreSQL     │
+│   Caché Local   │         │   PostgreSQL     │
 └─────────────────┘         └──────────────────┘
 ```
 
-### Backend Architecture
+### Arquitectura Backend
 
 ```
 backend/
-├── cmd/server/          # Entry point
+├── cmd/server/          # Punto de entrada
 ├── internal/
-│   ├── config/         # Configuration
-│   ├── database/       # DB connection & migrations
-│   ├── models/         # Data models
-│   ├── handlers/       # HTTP handlers (Controllers)
-│   ├── services/       # Business logic
-│   ├── repository/     # Data access layer
+│   ├── config/         # Configuración
+│   ├── database/       # Conexión a BD y migraciones
+│   ├── models/         # Modelos de datos
+│   ├── handlers/       # Controladores HTTP
+│   ├── services/       # Lógica de negocio
+│   ├── repository/     # Capa de acceso a datos
 │   ├── middleware/     # Auth, CORS, etc.
-│   └── websocket/      # WebSocket hub
-└── tests/              # Unit tests
+│   └── websocket/      # Hub de WebSocket
+└── tests/              # Tests unitarios
 ```
 
-### Mobile Architecture (MVVM)
+### Arquitectura Móvil (MVVM)
 
 ```
 mobile/src/
-├── models/             # Data models (TypeScript interfaces)
-├── services/           # API, Storage, WebSocket (Data Layer)
-├── contexts/           # State Management (ViewModel)
-├── screens/            # UI Components (View)
-├── navigation/         # Navigation setup
-└── theme/              # Colors & styling
+├── models/             # Modelos de datos (Interfaces TypeScript)
+├── services/           # API, Almacenamiento, WebSocket (Capa de Datos)
+├── contexts/           # Gestión de Estado (ViewModel)
+├── screens/            # Componentes de UI (Vista)
+├── navigation/         # Configuración de navegación
+└── theme/              # Colores y estilos
 ```
 
-## 🚀 Quick Start
+## 🚀 Inicio Rápido
 
-### Option 1: Docker (Recommended)
+### Opción 1: Docker (Recomendado)
 
 ```bash
-# Clone repository
+# Clonar repositorio
 git clone <repository-url>
 cd taskflow
 
-# Start backend with Docker
+# Iniciar backend con Docker
 docker-compose up --build
 
-# Backend will be available at:
+# El backend estará disponible en:
 # API: http://localhost:8080
 # Swagger: http://localhost:8080/swagger/index.html
 ```
 
-### Option 2: Local Development
+### Opción 2: Desarrollo Local
 
 #### Backend
 
 ```bash
 cd backend
 
-# Install dependencies
+# Instalar dependencias
 go mod download
 
-# Copy environment file
+# Copiar archivo de entorno
 cp .env.example .env
 
-# Edit .env with your PostgreSQL credentials
+# Editar .env con tus credenciales de PostgreSQL
 
-# Generate Swagger docs
+# Generar documentación Swagger
 swag init -g cmd/server/main.go -o docs
 
-# Run
+# Ejecutar
 go run cmd/server/main.go
 ```
 
-#### Mobile App
+#### App Móvil
 
 ```bash
 cd mobile
 
-# Install dependencies
+# Instalar dependencias
 npm install
 
-# Update backend URL in app.json
-# Change "apiUrl" and "wsUrl" to your backend URL
+# Actualizar URL del backend en app.json
+# Cambiar "apiUrl" y "wsUrl" a la URL de tu backend
 
-# Start Expo
+# Iniciar Expo
 npm start
 
-# Then press:
-# - 'i' for iOS Simulator
-# - 'a' for Android Emulator
-# - Scan QR with Expo Go app on physical device
+# Luego presiona:
+# - 'i' para Simulador iOS
+# - 'a' para Emulador Android
+# - Escanea el QR con la app Expo Go en un dispositivo físico
 ```
 
-## 📱 Screenshots
+## 📱 Capturas de Pantalla
 
-| Login | Task List | Task Detail | Profile |
-|-------|-----------|-------------|---------|
+| Login | Lista de Tareas | Detalle de Tarea | Perfil |
+|-------|-----------------|------------------|--------|
 | ![Login](https://via.placeholder.com/200x400/6200ee/ffffff?text=Login) | ![Tasks](https://via.placeholder.com/200x400/6200ee/ffffff?text=Tasks) | ![Detail](https://via.placeholder.com/200x400/6200ee/ffffff?text=Detail) | ![Profile](https://via.placeholder.com/200x400/6200ee/ffffff?text=Profile) |
 
-## 📖 API Documentation
+## 📖 Documentación de la API
 
-Once the backend is running, access Swagger UI at:
+Una vez que el backend esté corriendo, accede a Swagger UI en:
 
 ```
 http://localhost:8080/swagger/index.html
 ```
 
-### Main Endpoints
+### Endpoints Principales
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| POST | `/api/v1/auth/register` | Register new user |
-| POST | `/api/v1/auth/login` | Login |
-| POST | `/api/v1/auth/refresh` | Refresh token |
-| GET | `/api/v1/tasks` | List tasks (paginated) |
-| POST | `/api/v1/tasks` | Create task |
-| GET | `/api/v1/tasks/{id}` | Get task by ID |
-| PUT | `/api/v1/tasks/{id}` | Update task |
-| DELETE | `/api/v1/tasks/{id}` | Delete task |
-| PATCH | `/api/v1/tasks/{id}/status` | Update task status |
-| POST | `/api/v1/tasks/{id}/assign` | Assign task to user |
-| GET | `/api/v1/ws` | WebSocket connection |
+| POST | `/api/v1/auth/register` | Registrar nuevo usuario |
+| POST | `/api/v1/auth/login` | Iniciar sesión |
+| POST | `/api/v1/auth/refresh` | Refrescar token |
+| GET | `/api/v1/tasks` | Listar tareas (paginado) |
+| POST | `/api/v1/tasks` | Crear tarea |
+| GET | `/api/v1/tasks/{id}` | Obtener tarea por ID |
+| PUT | `/api/v1/tasks/{id}` | Actualizar tarea |
+| DELETE | `/api/v1/tasks/{id}` | Eliminar tarea |
+| PATCH | `/api/v1/tasks/{id}/status` | Actualizar estado de tarea |
+| POST | `/api/v1/tasks/{id}/assign` | Asignar tarea a usuario |
+| GET | `/api/v1/ws` | Conexión WebSocket |
 
-## 🧪 Testing
+## 🧪 Pruebas
 
-### Backend Tests
+### Tests de Backend
 
 ```bash
 cd backend
 
-# Run all tests
+# Ejecutar todos los tests
 go test ./... -v
 
-# With coverage
+# Con cobertura
 go test ./... -cover -coverprofile=coverage.out
 go tool cover -html=coverage.out
 ```
 
-### Mobile Tests
+### Tests de Móvil
 
 ```bash
 cd mobile
 
-# Run tests
+# Ejecutar tests
 npm test
 
-# With coverage
+# Con cobertura
 npm run test:coverage
 ```
 
-## 🐳 Docker Deployment
+## 🐳 Despliegue con Docker
 
-The project includes a complete Docker setup:
+El proyecto incluye una configuración completa de Docker:
 
 ```bash
-# Build and start all services
+# Construir e iniciar todos los servicios
 docker-compose up --build
 
-# Stop services
+# Detener servicios
 docker-compose down
 
-# View logs
+# Ver logs
 docker-compose logs -f backend
 docker-compose logs -f postgres
 ```
 
-Services:
+Servicios:
 - **Backend**: http://localhost:8080
 - **PostgreSQL**: localhost:5432
 - **Swagger**: http://localhost:8080/swagger/index.html
 
-## 🔑 Environment Variables
+## 🔑 Variables de Entorno
 
 ### Backend (.env)
 
@@ -229,25 +229,25 @@ DB_PORT=5432
 DB_USER=taskflow
 DB_PASSWORD=taskflow123
 DB_NAME=taskflow_db
-JWT_SECRET=your-secret-key
+JWT_SECRET=tu-clave-secreta
 JWT_EXPIRATION_HOURS=24
 ALLOWED_ORIGINS=http://localhost:19006
 ```
 
-### Mobile (app.json)
+### Móvil (app.json)
 
 ```json
 {
   "expo": {
     "extra": {
-      "apiUrl": "http://YOUR_IP:8080",
-      "wsUrl": "ws://YOUR_IP:8080"
+      "apiUrl": "http://TU_IP:8080",
+      "wsUrl": "ws://TU_IP:8080"
     }
   }
 }
 ```
 
-## 📊 Database Schema
+## 📊 Esquema de Base de Datos
 
 ```sql
 Users
@@ -271,53 +271,53 @@ Tasks
 └── updated_at (TIMESTAMP)
 ```
 
-## 🎯 Technical Decisions
+## 🎯 Decisiones Técnicas
 
-### Why Go + Gin?
-- **Performance**: Gin is one of the fastest Go frameworks
-- **Simplicity**: Clean, idiomatic code
-- **Concurrency**: Built-in goroutines for WebSocket
-- **Type Safety**: Static typing prevents runtime errors
+### ¿Por qué Go + Gin?
+- **Rendimiento**: Gin es uno de los frameworks más rápidos de Go
+- **Simplicidad**: Código limpio e idiomático
+- **Concurrencia**: Goroutines integradas para WebSocket
+- **Seguridad de Tipos**: El tipado estático previene errores en tiempo de ejecución
 
-### Why React Native + Expo?
-- **Cross-platform**: Single codebase for iOS & Android
-- **Fast Development**: Hot reload, OTA updates
-- **Native Features**: Easy access to biometrics, storage
-- **Expo Ecosystem**: Rich set of pre-built modules
+### ¿Por qué React Native + Expo?
+- **Multiplataforma**: Un solo código base para iOS y Android
+- **Desarrollo Rápido**: Hot reload, actualizaciones OTA
+- **Características Nativas**: Fácil acceso a biometría, almacenamiento
+- **Ecosistema Expo**: Rico conjunto de módulos preconstruidos
 
-### Why MVVM?
-- **Testability**: Business logic separated from UI
-- **Maintainability**: Clear separation of concerns
-- **Scalability**: Easy to add new features
-- **Team Collaboration**: Different developers can work on different layers
+### ¿Por qué MVVM?
+- **Testabilidad**: Lógica de negocio separada de la UI
+- **Mantenibilidad**: Clara separación de responsabilidades
+- **Escalabilidad**: Fácil de añadir nuevas funcionalidades
+- **Colaboración**: Diferentes desarrolladores pueden trabajar en diferentes capas
 
-### Why PostgreSQL?
-- **Reliability**: ACID compliance
-- **Features**: JSON support, full-text search
-- **Scalability**: Better than SQLite for production
-- **Community**: Excellent documentation and support
+### ¿Por qué PostgreSQL?
+- **Fiabilidad**: Cumplimiento ACID
+- **Características**: Soporte JSON, búsqueda de texto completo
+- **Escalabilidad**: Mejor que SQLite para producción
+- **Comunidad**: Excelente documentación y soporte
 
-## 🚀 Future Improvements
+## 🚀 Mejoras Futuras
 
-- [ ] Push notifications (Firebase Cloud Messaging)
-- [ ] Task comments and attachments
-- [ ] Team/workspace support
-- [ ] Task categories and tags
-- [ ] Analytics dashboard
-- [ ] Email notifications
-- [ ] Calendar integration
-- [ ] Task templates
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Kubernetes deployment
+- [ ] Notificaciones Push (Firebase Cloud Messaging)
+- [ ] Comentarios y adjuntos en tareas
+- [ ] Soporte para equipos/espacios de trabajo
+- [ ] Categorías y etiquetas de tareas
+- [ ] Panel de análisis (Analytics)
+- [ ] Notificaciones por correo electrónico
+- [ ] Integración con calendario
+- [ ] Plantillas de tareas
+- [ ] Pipeline CI/CD (GitHub Actions)
+- [ ] Despliegue en Kubernetes
 
-## 📝 License
+## 📝 Licencia
 
-MIT License - see LICENSE file for details
+Licencia MIT - ver archivo LICENSE para más detalles
 
-## 👤 Author
+## 👤 Autor
 
-Developed as a technical assessment for Teamcore.
+Desarrollado como evaluación técnica para Teamcore.
 
 ---
 
-**Built with ❤️ using Go, React Native, and lots of coffee ☕**
+**Construido con ❤️ usando Go, React Native, y mucho café ☕**
