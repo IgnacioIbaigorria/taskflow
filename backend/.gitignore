@@ -13,6 +13,7 @@ coverage.html
 
 # Environment variables
 .env
+.env.example
 
 # IDE
 .vscode/
