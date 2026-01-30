@@ -140,17 +140,13 @@ go run cmd/server/main.go
 
 ## 📱 Capturas de Pantalla
 
-| Inicio de Sesión | Lista de Tareas | Filtros y Búsqueda |
-|------------------|-----------------|-------------------|
-| ![Login](./taskflow1.jpeg) | ![Lista](./taskflow2.jpeg) | ![Filtros](./taskflow3.jpeg) |
-
-| Creación de Tarea | Detalles de Tarea | Perfil de Usuario |
-|-------------------|-------------------|-------------------|
-| ![Crear](./taskflow4.jpeg) | ![Detalle](./taskflow5.jpeg) | ![Perfil](./taskflow6.jpeg) |
-
-| Modo Oscuro |
-|-------------|
-| ![Dark](./taskflow7.jpeg) |
+| Inicio de Sesión | Lista de Tareas |
+|:---:|:---:|
+| <img src="./taskflow1.jpeg" width="250" /> | <img src="./taskflow2.jpeg" width="250" /> |
+| **Perfil de Usuario** | **Creación de Tarea** |
+| <img src="./taskflow3.jpeg" width="250" /> | <img src="./taskflow4.jpeg" width="250" /> |
+| **Menú Interactivo** | **Detalle de Tarea** |
+| <img src="./taskflow5.jpeg" width="250" /> | <img src="./taskflow6.jpeg" width="250" /> |
 
 ## 📖 Documentación de la API
 
@@ -315,6 +311,14 @@ Tasks
 - [ ] Integración con calendario
 - [ ] Plantillas de tareas
 - [ ] Pipeline CI/CD (GitHub Actions)
+- [ ] Despliegue en Kubernetes
+
+## ⚠️ Consideraciones de Despliegue y Conectividad
+
+Esta aplicación está diseñada para funcionar en un entorno local (Docker).
+*   **Idealmente (Producción):** El backend debería desplegarse en un servidor en la nube con un dominio público (ej. `api.taskflow.com`), lo que permitiría que la App Móvil se conecte automáticamente desde cualquier lugar.
+*   **Entorno Actual (Prueba):** Como el backend corre en tu PC local, la App Móvil (APK) necesita saber la dirección IP de tu computadora para conectarse.
+    *   **Solución:** Se incluyó un **Botón de Configuración** en la pantalla de Login que permite ingresar manualmente la IP del servidor (ej. `http://192.168.1.X:8080`) para facilitar las pruebas en diferentes redes WiFi sin recompilar.
 
 ## 📝 Licencia
 
