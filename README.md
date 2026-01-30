@@ -307,7 +307,7 @@ Tasks
 
 - [ ] Notificaciones Push (Firebase Cloud Messaging) cuando una tarea cambia de prioridad, estado o fecha de vencimiento
 - [ ] Registro de modificaciones en tareas (quien hizo qué modificación sobre qué tarea)
-- [ ] Comentarios y adjuntos en tareas
+- [ ] Abarcar > 80% de cobertura de tests
 - [ ] Soporte para equipos/espacios de trabajo
 - [ ] Categorías y etiquetas de tareas
 - [ ] Panel de análisis (Analytics)
