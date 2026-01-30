@@ -38,6 +38,13 @@ jest.mock('../src/services/secureStorageService', () => ({
     },
 }));
 
+jest.mock('../src/services/api', () => ({
+    apiService: {
+        loadBaseUrl: jest.fn().mockResolvedValue('http://localhost:8080/api/v1'),
+        setBaseUrl: jest.fn(),
+    },
+}));
+
 describe('LoginScreen', () => {
     const mockLogin = jest.fn();
     const mockNavigation = { navigate: jest.fn() };
@@ -53,7 +60,7 @@ describe('LoginScreen', () => {
     it('renders correctly', () => {
         const { getByText, getByPlaceholderText } = render(<LoginScreen navigation={mockNavigation} />);
         expect(getByText('Bienvenido')).toBeTruthy();
-        expect(getByPlaceholderText('Correo Electrónico')).toBeTruthy();
+        expect(getByPlaceholderText('Correo electrónico')).toBeTruthy();
     });
 
     it('shows error on empty fields', async () => {
@@ -74,7 +81,7 @@ describe('LoginScreen', () => {
     it('calls login on valid input', async () => {
         const { getByPlaceholderText, getByText } = render(<LoginScreen navigation={mockNavigation} />);
 
-        fireEvent.changeText(getByPlaceholderText('Correo Electrónico'), 'test@example.com');
+        fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'test@example.com');
         fireEvent.changeText(getByPlaceholderText('Contraseña'), 'password123');
 
         fireEvent.press(getByText('Iniciar sesión'));

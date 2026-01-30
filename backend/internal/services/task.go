@@ -63,6 +63,9 @@ func (s *TaskService) Create(userID uuid.UUID, req CreateTaskRequest) (*models.T
 		if err != nil {
 			return nil, errors.New("invalid due date format")
 		}
+		if parsed.Before(time.Now()) {
+			return nil, errors.New("due date cannot be in the past")
+		}
 		dueDate = &parsed
 	}
 
@@ -130,6 +133,9 @@ func (s *TaskService) Update(id uuid.UUID, userID uuid.UUID, req UpdateTaskReque
 		parsed, err := time.Parse(time.RFC3339, *req.DueDate)
 		if err != nil {
 			return nil, errors.New("invalid due date format")
+		}
+		if parsed.Before(time.Now()) {
+			return nil, errors.New("due date cannot be in the past")
 		}
 		task.DueDate = &parsed
 	}

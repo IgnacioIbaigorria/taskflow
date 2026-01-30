@@ -1,6 +1,6 @@
 # TaskFlow - Gestión de Tareas Colaborativa
 
-![TaskFlow Banner](https://via.placeholder.com/1200x300/6200ee/ffffff?text=TaskFlow)
+![TaskFlow Banner](assets/banner.png)
 
 TaskFlow es una aplicación de gestión de tareas colaborativa full-stack construida con un backend en Go + Gin y una aplicación móvil en React Native + Expo.
 

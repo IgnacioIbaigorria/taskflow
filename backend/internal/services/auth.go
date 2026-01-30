@@ -62,6 +62,12 @@ func (s *AuthService) Register(req RegisterRequest) (*AuthResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(req.Password) < 6 {
+		return nil, errors.New("password must be at least 6 characters")
+	}
+	if req.Email == "" {
+		return nil, errors.New("email is required")
+	}
 	if exists {
 		return nil, errors.New("email already registered")
 	}
