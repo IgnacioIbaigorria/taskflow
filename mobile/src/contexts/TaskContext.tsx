@@ -1,8 +1,10 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 import Constants from 'expo-constants';
 import { taskService } from '../services/taskService';
 import { storageService } from '../services/storageService';
 import { websocketService } from '../services/websocketService';
+import { syncService } from '../services/syncService';
 import { Task, TaskFilter, CreateTaskData, UpdateTaskData, TaskStatus, TaskEvent } from '../models/Task';
 
 interface TaskContextType {
@@ -26,51 +28,62 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [isOffline, setIsOffline] = useState(false);
     const [filter, setFilter] = useState<TaskFilter>({ page: 1, page_size: 20 });
+    const { isAuthenticated } = useAuth();
 
     useEffect(() => {
-        // Simple network check - will be true by default
-        // In a production app, you'd want to implement a more robust check
         checkNetworkStatus();
-        const interval = setInterval(checkNetworkStatus, 10000); // Check every 10 seconds
+        const interval = setInterval(checkNetworkStatus, 10000);
 
         return () => clearInterval(interval);
     }, []);
 
+    // New Effect: Sync when coming online
+    useEffect(() => {
+        if (!isOffline) {
+            const sync = async () => {
+                await syncService.sync();
+                fetchTasks();
+            };
+            sync();
+        }
+    }, [isOffline]);
+
     const checkNetworkStatus = async () => {
         try {
-            // Use the configured API URL from app.json via Constants
             const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8080';
 
-            // Make a simple GET request to the health endpoint
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
             const response = await fetch(`${apiUrl}/health`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
                 },
+                signal: controller.signal,
             });
 
-            // If we get any response (even 404), we're online
+            clearTimeout(timeoutId);
+
             setIsOffline(!response.ok && response.status !== 404);
         } catch (error) {
-            // Only set offline if there's a network error
-            console.log('Network check failed, setting offline:', error);
             setIsOffline(true);
         }
     };
 
     useEffect(() => {
-        // Load tasks on mount
-        loadTasks();
+        if (isAuthenticated) {
+            loadTasks();
+            const unsubscribe = websocketService.subscribe(handleTaskEvent);
 
-        // Subscribe to WebSocket events
-        const unsubscribe = websocketService.subscribe(handleTaskEvent);
-
-        return () => unsubscribe();
-    }, [filter]);
+            return () => unsubscribe();
+        } else {
+            setTasks([]);
+        }
+    }, [filter, isAuthenticated]);
 
     const loadTasks = async () => {
         if (isOffline) {
-            // Load from cache when offline
             const cachedTasks = await storageService.getTasks();
             setTasks(cachedTasks);
         } else {
@@ -82,16 +95,24 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         try {
             setLoading(true);
             const response = await taskService.getTasks(filter);
-            setTasks(response.tasks);
 
-            // Cache tasks for offline use
-            await storageService.saveTasks(response.tasks);
+            if (filter.page === 1) {
+                setTasks(response.tasks);
+            } else {
+                setTasks(prev => {
+                    // Filter out any duplicates just in case
+                    const newTasks = response.tasks.filter(nt => !prev.some(pt => pt.id === nt.id));
+                    return [...prev, ...newTasks];
+                });
+            }
+
+            // Always merge fetched tasks into cache to build offline dataset
+            await storageService.mergeTasks(response.tasks);
         } catch (error) {
-            console.error('Error fetching tasks:', error);
-
-            // Fallback to cached tasks if network request fails
-            const cachedTasks = await storageService.getTasks();
-            setTasks(cachedTasks);
+            if (filter.page === 1) {
+                const cachedTasks = await storageService.getTasks();
+                setTasks(cachedTasks);
+            }
         } finally {
             setLoading(false);
         }
@@ -99,23 +120,49 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
     const createTask = async (data: CreateTaskData) => {
         if (isOffline) {
-            // Queue for later when online
+            const tempId = 'offline-' + Date.now();
+            // Create an optimistic task. Note: We might miss some fields like created_by, but it allows viewing.
+            const optimisticTask: Task = {
+                id: tempId,
+                title: data.title,
+                description: data.description || '',
+                priority: data.priority || 'medium',
+                status: 'pending',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                // assigned_to: data.assigned_to // CreateTaskData might not have this, check definition. Assuming basic data.
+            } as Task;
+
+            setTasks(prev => [optimisticTask, ...prev]);
+            await storageService.saveTask(optimisticTask);
             await storageService.addToOfflineQueue({ type: 'create', data });
             return;
         }
 
         try {
             const newTask = await taskService.createTask(data);
-            setTasks(prev => [newTask, ...prev]);
+            setTasks(prev => {
+                if (prev.some(t => t.id === newTask.id)) {
+                    return prev;
+                }
+                return [newTask, ...prev];
+            });
             await storageService.saveTask(newTask);
         } catch (error) {
-            console.error('Error creating task:', error);
             throw error;
         }
     };
 
     const updateTask = async (id: string, data: UpdateTaskData) => {
         if (isOffline) {
+            setTasks(prev => prev.map(t => {
+                if (t.id === id) {
+                    const updated = { ...t, ...data, updated_at: new Date().toISOString() };
+                    storageService.saveTask(updated);
+                    return updated;
+                }
+                return t;
+            }));
             await storageService.addToOfflineQueue({ type: 'update', taskId: id, data });
             return;
         }
@@ -125,13 +172,14 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             setTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
             await storageService.saveTask(updatedTask);
         } catch (error) {
-            console.error('Error updating task:', error);
             throw error;
         }
     };
 
     const deleteTask = async (id: string) => {
         if (isOffline) {
+            setTasks(prev => prev.filter(t => t.id !== id));
+            await storageService.deleteTask(id);
             await storageService.addToOfflineQueue({ type: 'delete', taskId: id, data: null });
             return;
         }
@@ -141,13 +189,20 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             setTasks(prev => prev.filter(t => t.id !== id));
             await storageService.deleteTask(id);
         } catch (error) {
-            console.error('Error deleting task:', error);
             throw error;
         }
     };
 
     const updateTaskStatus = async (id: string, status: TaskStatus) => {
         if (isOffline) {
+            setTasks(prev => prev.map(t => {
+                if (t.id === id) {
+                    const updated = { ...t, status, updated_at: new Date().toISOString() };
+                    storageService.saveTask(updated);
+                    return updated;
+                }
+                return t;
+            }));
             await storageService.addToOfflineQueue({ type: 'updateStatus', taskId: id, data: { status } });
             return;
         }
@@ -157,7 +212,6 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             setTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
             await storageService.saveTask(updatedTask);
         } catch (error) {
-            console.error('Error updating task status:', error);
             throw error;
         }
     };
@@ -170,7 +224,13 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         switch (event.type) {
             case 'created':
                 if (event.task) {
-                    setTasks(prev => [event.task!, ...prev]);
+                    setTasks(prev => {
+                        // Check if we already have this task (e.g. from the API call that created it)
+                        if (prev.some(t => t.id === event.task!.id)) {
+                            return prev;
+                        }
+                        return [event.task!, ...prev];
+                    });
                 }
                 break;
             case 'updated':

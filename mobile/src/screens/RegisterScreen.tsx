@@ -25,27 +25,27 @@ export default function RegisterScreen({ navigation }: any) {
         setError('');
 
         if (!name || !email || !password || !confirmPassword) {
-            setError('Please fill all fields');
+            setError('Por favor, completa todos los campos');
             return;
         }
 
         if (name.length < 2) {
-            setError('Name must be at least 2 characters');
+            setError('El nombre debe tener al menos 2 caracteres');
             return;
         }
 
         if (!validateEmail(email)) {
-            setError('Invalid email format');
+            setError('El correo electrónico no es válido');
             return;
         }
 
         if (password.length < 6) {
-            setError('Password must be at least 6 characters');
+            setError('La contraseña debe tener al menos 6 caracteres');
             return;
         }
 
         if (password !== confirmPassword) {
-            setError('Passwords do not match');
+            setError('Las contraseñas no coinciden');
             return;
         }
 
@@ -53,7 +53,7 @@ export default function RegisterScreen({ navigation }: any) {
             setLoading(true);
             await register({ name, email, password });
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Registration failed');
+            setError(err.response?.data?.error || 'Error al registrar');
         } finally {
             setLoading(false);
         }
@@ -66,9 +66,9 @@ export default function RegisterScreen({ navigation }: any) {
         >
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Text style={[styles.title, { color: theme.text }]}>Create Account</Text>
+                    <Text style={[styles.title, { color: theme.text }]}>Crear Cuenta</Text>
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                        Sign up to get started
+                        Registrate para comenzar
                     </Text>
                 </View>
 
@@ -87,14 +87,14 @@ export default function RegisterScreen({ navigation }: any) {
                     />
 
                     <TextInput
-                        label="Correo Electrónico"
+                        label="Correo electrónico"
                         value={email}
                         onChangeText={setEmail}
                         keyboardType="email-address"
                         autoCapitalize="none"
                         mode="outlined"
                         style={styles.input}
-                        placeholder="your@email.com"
+                        placeholder="tu@email.com"
                         placeholderTextColor={theme.placeholder}
                         outlineColor={theme.inputBorder}
                         activeOutlineColor={theme.inputBorderActive}
@@ -108,7 +108,7 @@ export default function RegisterScreen({ navigation }: any) {
                         secureTextEntry={secureTextEntry}
                         mode="outlined"
                         style={styles.input}
-                        placeholder="Min 6 characters"
+                        placeholder="Mínimo 6 caracteres"
                         placeholderTextColor={theme.placeholder}
                         outlineColor={theme.inputBorder}
                         activeOutlineColor={theme.inputBorderActive}
@@ -122,13 +122,13 @@ export default function RegisterScreen({ navigation }: any) {
                     />
 
                     <TextInput
-                        label="Confirmar Contraseña"
+                        label="Confirmar contraseña"
                         value={confirmPassword}
                         onChangeText={setConfirmPassword}
                         secureTextEntry={confirmSecureTextEntry}
                         mode="outlined"
                         style={styles.input}
-                        placeholder="Confirm your password"
+                        placeholder="Confirma tu contraseña"
                         placeholderTextColor={theme.placeholder}
                         outlineColor={theme.inputBorder}
                         activeOutlineColor={theme.inputBorderActive}

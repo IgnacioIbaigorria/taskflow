@@ -122,29 +122,35 @@ go run cmd/server/main.go
 
 #### App Móvil
 
-```bash
-cd mobile
+**Opción 1: Android (Instalación Directa)**
+- Descarga e instala el archivo `.apk` disponible en este repositorio.
+- Asegúrate de que tu dispositivo esté en la misma red que el backend o que el backend sea accesible públicamente.
 
-# Instalar dependencias
-npm install
-
-# Actualizar URL del backend en app.json
-# Cambiar "apiUrl" y "wsUrl" a la URL de tu backend
-
-# Iniciar Expo
-npm start
-
-# Luego presiona:
-# - 'i' para Simulador iOS
-# - 'a' para Emulador Android
-# - Escanea el QR con la app Expo Go en un dispositivo físico
-```
+**Opción 2: iOS y Desarrollo (Expo Go)**
+1. Descarga la app **Expo Go** (App Store / Play Store).
+2. En la terminal:
+   ```bash
+   cd mobile
+   npm install
+   npm start
+   ```
+3. Escanea el código QR generado en la terminal:
+   - **iOS**: Usa la aplicación de Cámara.
+   - **Android**: Usa la app de Expo Go.
 
 ## 📱 Capturas de Pantalla
 
-| Login | Lista de Tareas | Detalle de Tarea | Perfil |
-|-------|-----------------|------------------|--------|
-| ![Login](https://via.placeholder.com/200x400/6200ee/ffffff?text=Login) | ![Tasks](https://via.placeholder.com/200x400/6200ee/ffffff?text=Tasks) | ![Detail](https://via.placeholder.com/200x400/6200ee/ffffff?text=Detail) | ![Profile](https://via.placeholder.com/200x400/6200ee/ffffff?text=Profile) |
+| Inicio de Sesión | Lista de Tareas | Filtros y Búsqueda |
+|------------------|-----------------|-------------------|
+| ![Login](./taskflow1.jpeg) | ![Lista](./taskflow2.jpeg) | ![Filtros](./taskflow3.jpeg) |
+
+| Creación de Tarea | Detalles de Tarea | Perfil de Usuario |
+|-------------------|-------------------|-------------------|
+| ![Crear](./taskflow4.jpeg) | ![Detalle](./taskflow5.jpeg) | ![Perfil](./taskflow6.jpeg) |
+
+| Modo Oscuro |
+|-------------|
+| ![Dark](./taskflow7.jpeg) |
 
 ## 📖 Documentación de la API
 
@@ -299,7 +305,8 @@ Tasks
 
 ## 🚀 Mejoras Futuras
 
-- [ ] Notificaciones Push (Firebase Cloud Messaging)
+- [ ] Notificaciones Push (Firebase Cloud Messaging) cuando una tarea cambia de prioridad, estado o fecha de vencimiento
+- [ ] Registro de modificaciones en tareas (quien hizo qué modificación sobre qué tarea)
 - [ ] Comentarios y adjuntos en tareas
 - [ ] Soporte para equipos/espacios de trabajo
 - [ ] Categorías y etiquetas de tareas
@@ -308,7 +315,6 @@ Tasks
 - [ ] Integración con calendario
 - [ ] Plantillas de tareas
 - [ ] Pipeline CI/CD (GitHub Actions)
-- [ ] Despliegue en Kubernetes
 
 ## 📝 Licencia
 
@@ -316,7 +322,7 @@ Licencia MIT - ver archivo LICENSE para más detalles
 
 ## 👤 Autor
 
-Desarrollado como evaluación técnica para Teamcore.
+Desarrollado por Ignacio Ibaigorria como evaluación técnica para Teamcore.
 
 ---
 

@@ -2,20 +2,31 @@ package services
 
 import (
 	"errors"
+	"time"
 
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/models"
 	"github.com/google/uuid"
-	"github.com/taskflow/backend/internal/models"
-	"github.com/taskflow/backend/internal/repository"
 )
+
+// TaskRepository interface for task service
+type TaskRepository interface {
+	Create(task *models.Task) error
+	FindByID(id uuid.UUID) (*models.Task, error)
+	Update(task *models.Task) error
+	Delete(id uuid.UUID) error
+	List(filter models.TaskFilter) ([]models.Task, int64, error)
+	UpdateStatus(id uuid.UUID, status models.TaskStatus) error
+	AssignTask(taskID, userID uuid.UUID) error
+}
 
 // TaskService handles task business logic
 type TaskService struct {
-	taskRepo *repository.TaskRepository
-	userRepo *repository.UserRepository
+	taskRepo TaskRepository
+	userRepo UserRepository
 }
 
 // NewTaskService creates a new task service
-func NewTaskService(taskRepo *repository.TaskRepository, userRepo *repository.UserRepository) *TaskService {
+func NewTaskService(taskRepo TaskRepository, userRepo UserRepository) *TaskService {
 	return &TaskService{
 		taskRepo: taskRepo,
 		userRepo: userRepo,
@@ -24,19 +35,19 @@ func NewTaskService(taskRepo *repository.TaskRepository, userRepo *repository.Us
 
 // CreateTaskRequest represents a create task request
 type CreateTaskRequest struct {
-	Title       string            `json:"title" binding:"required,max=100"`
-	Description string            `json:"description" binding:"max=500"`
-	Priority    models.Priority   `json:"priority" binding:"required"`
-	DueDate     *string           `json:"due_date"`
+	Title       string          `json:"title" binding:"required,max=100"`
+	Description string          `json:"description" binding:"max=500"`
+	Priority    models.Priority `json:"priority" binding:"required"`
+	DueDate     *string         `json:"due_date"`
 }
 
 // UpdateTaskRequest represents an update task request
 type UpdateTaskRequest struct {
-	Title       *string           `json:"title" binding:"omitempty,max=100"`
-	Description *string           `json:"description" binding:"omitempty,max=500"`
-	Priority    *models.Priority  `json:"priority"`
+	Title       *string            `json:"title" binding:"omitempty,max=100"`
+	Description *string            `json:"description" binding:"omitempty,max=500"`
+	Priority    *models.Priority   `json:"priority"`
 	Status      *models.TaskStatus `json:"status"`
-	DueDate     *string           `json:"due_date"`
+	DueDate     *string            `json:"due_date"`
 }
 
 // Create creates a new task
@@ -46,11 +57,21 @@ func (s *TaskService) Create(userID uuid.UUID, req CreateTaskRequest) (*models.T
 		return nil, errors.New("invalid priority")
 	}
 
+	var dueDate *time.Time
+	if req.DueDate != nil {
+		parsed, err := time.Parse(time.RFC3339, *req.DueDate)
+		if err != nil {
+			return nil, errors.New("invalid due date format")
+		}
+		dueDate = &parsed
+	}
+
 	task := &models.Task{
 		Title:       req.Title,
 		Description: req.Description,
 		Priority:    req.Priority,
 		Status:      models.TaskStatusPending,
+		DueDate:     dueDate,
 		CreatedBy:   userID,
 	}
 
@@ -105,6 +126,13 @@ func (s *TaskService) Update(id uuid.UUID, userID uuid.UUID, req UpdateTaskReque
 		}
 		task.Status = *req.Status
 	}
+	if req.DueDate != nil {
+		parsed, err := time.Parse(time.RFC3339, *req.DueDate)
+		if err != nil {
+			return nil, errors.New("invalid due date format")
+		}
+		task.DueDate = &parsed
+	}
 
 	if err := s.taskRepo.Update(task); err != nil {
 		return nil, err
@@ -130,8 +158,8 @@ func (s *TaskService) Delete(id uuid.UUID, userID uuid.UUID) error {
 
 // List lists tasks with filters
 func (s *TaskService) List(userID uuid.UUID, filter models.TaskFilter) ([]models.Task, int64, error) {
-	// Always filter by user's tasks (created by or assigned to)
-	filter.CreatedBy = &userID
+	// Filter by user's tasks (created by or assigned to)
+	// filter.RelatedUser = &userID
 
 	if filter.Page < 1 {
 		filter.Page = 1

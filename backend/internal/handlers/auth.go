@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/services"
 	"github.com/gin-gonic/gin"
-	"github.com/taskflow/backend/internal/services"
 )
 
 // AuthHandler handles authentication endpoints

@@ -21,7 +21,6 @@ class WebSocketService {
         try {
             const token = await SecureStore.getItemAsync('access_token');
             if (!token) {
-                console.log('No token available for WebSocket connection');
                 return;
             }
 
@@ -37,7 +36,6 @@ class WebSocketService {
             this.socket = new WebSocket(wsUrl);
 
             this.socket.onopen = () => {
-                console.log('WebSocket connected');
                 this.reconnectAttempts = 0;
                 if (this.reconnectTimer) {
                     clearTimeout(this.reconnectTimer);
@@ -46,7 +44,6 @@ class WebSocketService {
             };
 
             this.socket.onclose = (event) => {
-                console.log('WebSocket disconnected:', event.code, event.reason);
                 this.attemptReconnect();
             };
 
@@ -55,22 +52,21 @@ class WebSocketService {
                     const taskEvent: TaskEvent = JSON.parse(event.data);
                     this.notifyListeners(taskEvent);
                 } catch (error) {
-                    console.error('Error parsing WebSocket message:', error);
+                    // Error parsing WebSocket message
                 }
             };
 
             this.socket.onerror = (error) => {
-                console.error('WebSocket connection error:', error);
+                // WebSocket connection error
             };
         } catch (error) {
-            console.error('Error setting up WebSocket:', error);
+            // Error setting up WebSocket
             this.attemptReconnect();
         }
     }
 
     private attemptReconnect(): void {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            console.log('Max reconnect attempts reached');
             return;
         }
 
@@ -80,8 +76,6 @@ class WebSocketService {
 
         this.reconnectAttempts++;
         const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 5000);
-
-        console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
         this.reconnectTimer = setTimeout(() => {
             this.reconnectTimer = null;
@@ -105,7 +99,6 @@ class WebSocketService {
     subscribe(callback: EventCallback): () => void {
         this.listeners.push(callback);
 
-        // Return unsubscribe function
         return () => {
             this.listeners = this.listeners.filter(cb => cb !== callback);
         };
@@ -116,7 +109,7 @@ class WebSocketService {
             try {
                 callback(event);
             } catch (error) {
-                console.error('Error in WebSocket listener:', error);
+                throw error;
             }
         });
     }

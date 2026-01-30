@@ -11,8 +11,9 @@ interface AuthContextType {
     login: (credentials: LoginCredentials) => Promise<void>;
     register: (data: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
-    biometricEnabled: boolean;
+    biometricUser: string | null;
     toggleBiometric: (enabled: boolean) => Promise<void>;
+    loginWithBiometric: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-    const [biometricEnabled, setBiometricEnabled] = useState(false);
+    const [biometricUser, setBiometricUser] = useState<string | null>(null);
 
     useEffect(() => {
         checkAuth();
@@ -28,35 +29,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const checkAuth = async () => {
         try {
-            // Check biometric preference
-            const isBiometric = await storageService.isBiometricEnabled();
-            setBiometricEnabled(isBiometric);
+            const bioUser = await storageService.getBiometricUser();
+            setBiometricUser(bioUser);
 
             const isAuth = await authService.isAuthenticated();
+
             if (isAuth) {
                 const currentUser = await authService.getCurrentUser();
                 setUser(currentUser);
-
-                // Connect WebSocket
                 await websocketService.connect();
+            } else {
+                if (bioUser && await authService.hasSavedCredentials()) {
+                }
             }
         } catch (error) {
-            console.error('Error checking auth:', error);
+            throw error;
         } finally {
             setLoading(false);
         }
     };
 
     const toggleBiometric = async (enabled: boolean) => {
-        setBiometricEnabled(enabled);
-        await storageService.setBiometricEnabled(enabled);
+        if (!user) return;
+
+        if (enabled) {
+            setBiometricUser(user.email);
+            await storageService.setBiometricUser(user.email);
+        } else {
+            setBiometricUser(null);
+            await storageService.setBiometricUser(null);
+        }
+    };
+
+    const loginWithBiometric = async () => {
+        try {
+            setLoading(true);
+            const response = await authService.loginWithSavedCredentials();
+            setUser(response.user);
+            await websocketService.connect();
+        } catch (error) {
+            throw error;
+        } finally {
+            setLoading(false);
+        }
     };
 
     const login = async (credentials: LoginCredentials) => {
         const response = await authService.login(credentials);
         setUser(response.user);
 
-        // Connect WebSocket
+        if (biometricUser && biometricUser !== response.user.email) {
+            setBiometricUser(null);
+            await storageService.setBiometricUser(null);
+        }
+
         await websocketService.connect();
     };
 
@@ -64,21 +90,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await authService.register(data);
         setUser(response.user);
 
-        // Connect WebSocket
         await websocketService.connect();
     };
 
     const logout = async () => {
-        await authService.logout();
+        const keepBiometric = !!(user && biometricUser === user.email);
+
+        await authService.logout(keepBiometric);
         setUser(null);
 
-        // Disconnect WebSocket and clear storage
         websocketService.disconnect();
-        await storageService.clearAll();
+        await storageService.saveTasks([]);
 
-        // Disable biometric to prevent next user inheriting it
-        // User must re-enable it if they want it
-        await toggleBiometric(false);
+        if (!keepBiometric) {
+            setBiometricUser(null);
+            await storageService.setBiometricUser(null);
+        }
     };
 
     return (
@@ -90,8 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 login,
                 register,
                 logout,
-                biometricEnabled,
+                biometricUser,
                 toggleBiometric,
+                loginWithBiometric,
             }}
         >
             {children}

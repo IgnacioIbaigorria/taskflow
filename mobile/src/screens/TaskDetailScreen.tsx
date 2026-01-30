@@ -4,6 +4,7 @@ import { TextInput, Button, Text, IconButton } from 'react-native-paper';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TaskContext';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { taskService } from '../services/taskService';
 import { userService, User } from '../services/userService';
 import { Task, Priority, TaskStatus, PRIORITY_LABELS, STATUS_LABELS } from '../models/Task';
@@ -13,7 +14,7 @@ export default function TaskDetailScreen({ route, navigation }: any) {
     const { taskId } = route.params;
     const { theme } = useTheme();
     const { user } = useAuth();
-    const { updateTask, deleteTask, updateTaskStatus } = useTasks();
+    const { updateTask, deleteTask, updateTaskStatus, tasks, isOffline } = useTasks();
     const [task, setTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
@@ -22,41 +23,69 @@ export default function TaskDetailScreen({ route, navigation }: any) {
     const [priority, setPriority] = useState<Priority>('medium');
     const [status, setStatus] = useState<TaskStatus>('pending');
     const [users, setUsers] = useState<User[]>([]);
+    const [dueDate, setDueDate] = useState<string | null>(null);
     const [showStatusPicker, setShowStatusPicker] = useState(false);
     const [showPriorityPicker, setShowPriorityPicker] = useState(false);
     const [showAssigneePicker, setShowAssigneePicker] = useState(false);
+
+    // DateTimePicker state
+    const [mode, setMode] = useState<'date' | 'time'>('date');
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [tempDate, setTempDate] = useState<Date | undefined>(undefined);
 
     const priorities: Priority[] = ['low', 'medium', 'high', 'urgent'];
     const statuses: TaskStatus[] = ['pending', 'in_progress', 'completed', 'cancelled'];
 
     useEffect(() => {
         loadTask();
-    }, [taskId]);
+    }, [taskId, isOffline]);
 
     const loadTask = async () => {
+        // First try to find in context (cache)
+        const cachedTask = tasks.find(t => t.id === taskId);
+
+        if (isOffline) {
+            if (cachedTask) {
+                setTask(cachedTask);
+                populateForm(cachedTask);
+                setLoading(false);
+                return;
+            } else {
+                Alert.alert('Error', 'Tarea no encontrada en caché');
+                navigation.goBack();
+                return;
+            }
+        }
+
         try {
             const data = await taskService.getTaskById(taskId);
             setTask(data);
-            setTitle(data.title);
-            setDescription(data.description);
-            setPriority(data.priority);
-            setStatus(data.status);
+            populateForm(data);
 
-            // Load users if creator
-            // Note: In a real app we might want to load this only when opening picker
-            // but for simplicity and display names we load it here or nearby.
-            // Actually, for display names 'task.creator' and 'task.assignee' are used.
-            // For picker we need list.
+            // If we are creator, load users for assignment
             if (user?.id === data.created_by) {
                 const usersList = await userService.getUsers();
                 setUsers(usersList);
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to load task');
-            navigation.goBack();
+            if (cachedTask) {
+                setTask(cachedTask);
+                populateForm(cachedTask);
+            } else {
+                Alert.alert('Error', 'Error al cargar la tarea');
+                navigation.goBack();
+            }
         } finally {
             setLoading(false);
         }
+    };
+
+    const populateForm = (data: Task) => {
+        setTitle(data.title);
+        setDescription(data.description);
+        setPriority(data.priority);
+        setStatus(data.status);
+        if (data.due_date) setDueDate(data.due_date);
     };
 
     const handleSave = async () => {
@@ -66,30 +95,48 @@ export default function TaskDetailScreen({ route, navigation }: any) {
                 description,
                 priority,
                 status,
+                due_date: dueDate ? new Date(dueDate).toISOString() : undefined // Convert string/date loop
             });
             setEditing(false);
-            loadTask();
-            Alert.alert('Success', 'Task updated successfully');
+
+            // Update local task state
+            if (task) {
+                setTask({
+                    ...task,
+                    title,
+                    description,
+                    priority,
+                    status,
+                    due_date: dueDate || undefined,
+                });
+            }
+
+            // Only reload from API if online
+            if (!isOffline) {
+                loadTask();
+            }
+
+            Alert.alert('Éxito', 'Tarea actualizada correctamente');
         } catch (error) {
-            Alert.alert('Error', 'Failed to update task');
+            Alert.alert('Error', 'Error al actualizar la tarea');
         }
     };
 
     const handleDelete = () => {
         Alert.alert(
-            'Delete Task',
-            'Are you sure you want to delete this task?',
+            'Borrar tarea',
+            '¿Estás seguro de que quieres borrar esta tarea?',
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: 'Cancelar', style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: 'Borrar',
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await deleteTask(taskId);
                             navigation.goBack();
                         } catch (error) {
-                            Alert.alert('Error', 'Failed to delete task');
+                            Alert.alert('Error', 'Error al borrar la tarea');
                         }
                     },
                 },
@@ -98,13 +145,28 @@ export default function TaskDetailScreen({ route, navigation }: any) {
     };
 
     const handleStatusChange = async (newStatus: TaskStatus) => {
+        if (editing) {
+            setStatus(newStatus);
+            setShowStatusPicker(false);
+            return;
+        }
+
         try {
             await updateTaskStatus(taskId, newStatus);
             setStatus(newStatus);
             setShowStatusPicker(false);
-            loadTask();
+
+            // Update local task state instead of reloading
+            if (task) {
+                setTask({ ...task, status: newStatus });
+            }
+
+            // Only reload from API if online
+            if (!isOffline) {
+                loadTask();
+            }
         } catch (error) {
-            Alert.alert('Error', 'Failed to update status');
+            Alert.alert('Error', 'Error al actualizar el estado de la tarea');
         }
     };
 
@@ -137,37 +199,39 @@ export default function TaskDetailScreen({ route, navigation }: any) {
         <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={styles.content}>
                 <View style={[styles.card, { backgroundColor: theme.card }]}>
-                    <View style={styles.headerActions}>
-                        {user?.id === task.created_by && (
-                            <>
-                                <IconButton
-                                    icon={editing ? 'close' : 'pencil'}
-                                    onPress={() => setEditing(!editing)}
-                                />
-                                <IconButton
-                                    icon="delete"
-                                    onPress={handleDelete}
-                                    iconColor={theme.error}
-                                />
-                            </>
-                        )}
-                    </View>
+                    {/* Header Actions removed from here to be integrated with Title */}
 
                     {editing ? (
                         <>
+                            <View style={[styles.headerActions, { marginRight: -8, marginTop: -8 }]}>
+                                {user?.id === task.created_by && (
+                                    <View style={styles.actionButtonsRow}>
+                                        <IconButton
+                                            icon="close"
+                                            onPress={() => setEditing(false)}
+                                        />
+                                        <IconButton
+                                            icon="delete"
+                                            onPress={handleDelete}
+                                            iconColor={theme.error}
+                                        />
+                                    </View>
+                                )}
+                            </View>
+
                             <TextInput
-                                label="Title"
+                                label="Título"
                                 value={title}
                                 onChangeText={setTitle}
                                 mode="outlined"
-                                style={styles.input}
+                                style={[styles.input, { marginBottom: 16 }]}
                                 placeholderTextColor={theme.placeholder}
                                 outlineColor={theme.inputBorder}
                                 activeOutlineColor={theme.inputBorderActive}
                             />
 
                             <TextInput
-                                label="Description"
+                                label="Descripción"
                                 value={description}
                                 onChangeText={setDescription}
                                 mode="outlined"
@@ -201,6 +265,70 @@ export default function TaskDetailScreen({ route, navigation }: any) {
                                 </Button>
                             </View>
 
+                            {/* Date Picker Button in Edit Mode */}
+                            <View style={[styles.row, { marginTop: 0 }]}>
+                                <Button
+                                    mode="outlined"
+                                    onPress={() => {
+                                        setTempDate(dueDate ? new Date(dueDate) : new Date());
+                                        setMode('date');
+                                        setShowDatePicker(true);
+                                    }}
+                                    icon="calendar"
+                                    style={[styles.menuButton, { borderColor: theme.inputBorder }]}
+                                    textColor={theme.text}
+                                >
+                                    {dueDate
+                                        ? new Date(dueDate).toLocaleString('es-ES', {
+                                            day: '2-digit', month: '2-digit', year: 'numeric',
+                                            hour: '2-digit', minute: '2-digit'
+                                        })
+                                        : 'Añadir vencimiento'}
+                                </Button>
+                                {dueDate && (
+                                    <IconButton
+                                        icon="close"
+                                        size={20}
+                                        onPress={() => setDueDate(null)}
+                                        style={{ marginLeft: 8 }}
+                                    />
+                                )}
+                            </View>
+
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    testID="dateTimePicker"
+                                    value={tempDate || new Date()}
+                                    mode={mode}
+                                    is24Hour={true}
+                                    display="default"
+                                    onChange={(event, selectedDate) => {
+                                        setShowDatePicker(false);
+                                        if (selectedDate) {
+                                            if (mode === 'date') {
+                                                setTempDate(selectedDate);
+                                                // Trigger time picker
+                                                setMode('time');
+                                                setTimeout(() => setShowDatePicker(true), 100);
+                                            } else {
+                                                // Combine date and time
+                                                const finalDate = new Date(tempDate || new Date());
+                                                finalDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()); // Actually selectedDate is the time one, but let's be safe
+                                                // Wait, the previous date was in tempDate. current selectedDate has the time.
+                                                // But on Android, the date part might be reset or kept depending on impl.
+                                                // Better: Use tempDate's date and selectedDate's time.
+                                                const newDate = new Date(tempDate || new Date());
+                                                newDate.setHours(selectedDate.getHours());
+                                                newDate.setMinutes(selectedDate.getMinutes());
+
+                                                setDueDate(newDate.toISOString());
+                                                setMode('date');
+                                            }
+                                        }
+                                    }}
+                                />
+                            )}
+
 
 
                             <Button
@@ -210,12 +338,29 @@ export default function TaskDetailScreen({ route, navigation }: any) {
                                 buttonColor={theme.primary}
                                 textColor={theme.onPrimary}
                             >
-                                Guardar Cambios
+                                Guardar cambios
                             </Button>
                         </>
                     ) : (
                         <>
-                            <Text style={[styles.title, { color: theme.text }]}>{task.title}</Text>
+                            <View style={styles.titleRow}>
+                                <Text style={[styles.title, { color: theme.text, flex: 1 }]}>{task.title}</Text>
+                                {user?.id === task.created_by && (
+                                    <View style={styles.actionButtonsRow}>
+                                        <IconButton
+                                            icon="pencil"
+                                            onPress={() => setEditing(true)}
+                                            size={20}
+                                        />
+                                        <IconButton
+                                            icon="delete"
+                                            onPress={handleDelete}
+                                            iconColor={theme.error}
+                                            size={20}
+                                        />
+                                    </View>
+                                )}
+                            </View>
 
                             <View style={styles.badges}>
                                 <View style={[styles.badge, { backgroundColor: priorityColors[task.priority] }]}>
@@ -278,15 +423,31 @@ export default function TaskDetailScreen({ route, navigation }: any) {
                             <View style={styles.info}>
                                 <Text style={[styles.label, { color: theme.textSecondary }]}>Creado el</Text>
                                 <Text style={{ color: theme.text }}>
-                                    {new Date(task.created_at).toLocaleString()}
+                                    {new Date(task.created_at).toLocaleString('es-ES', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: false
+                                    })}
                                 </Text>
                             </View>
 
-                            {task.due_date && (
+                            {dueDate && (
                                 <View style={styles.info}>
                                     <Text style={[styles.label, { color: theme.textSecondary }]}>Fecha de vencimiento</Text>
                                     <Text style={{ color: theme.text }}>
-                                        {new Date(task.due_date).toLocaleString()}
+                                        {new Date(dueDate).toLocaleString('es-ES', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit',
+                                            hour12: false
+                                        })}
                                     </Text>
                                 </View>
                             )}
@@ -467,10 +628,15 @@ const styles = StyleSheet.create({
         marginTop: -8,
         marginRight: -8,
     },
+    actionButtonsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 16,
+        // marginBottom: 16, // Removed to let row handle spacing
+        marginRight: 8,
     },
     badges: {
         flexDirection: 'row',

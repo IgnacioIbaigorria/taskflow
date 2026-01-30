@@ -1,4 +1,4 @@
-module github.com/taskflow/backend
+module github.com/IgnacioIbaigorria/taskflow/backend
 
 go 1.21
 

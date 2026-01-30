@@ -1,11 +1,9 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-
-// Screens
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -13,22 +11,18 @@ import TaskListScreen from '../screens/TaskListScreen';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
 import CreateTaskScreen from '../screens/CreateTaskScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-
-// Components
 import { IconButton } from 'react-native-paper';
 import { DrawerActions } from '@react-navigation/native';
 
-// Components
 import CustomDrawer from '../components/CustomDrawer';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
 
-// Common header options to include the Drawer Menu button
 const getHeaderOptions = (theme: any, navigation: any, title: string) => ({
     title,
     headerStyle: {
-        backgroundColor: theme.dark ? theme.surface : theme.primary, // Use surface for dark mode headers
+        backgroundColor: theme.dark ? theme.surface : theme.primary,
     },
     headerTintColor: theme.dark ? theme.text : theme.onPrimary,
     headerTitleStyle: {
@@ -43,16 +37,21 @@ const getHeaderOptions = (theme: any, navigation: any, title: string) => ({
     ),
 });
 
-// Stack for Task related screens
 function TasksStack() {
     const { theme } = useTheme();
 
     return (
-        <Stack.Navigator>
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: true,
+                gestureEnabled: true,
+                ...TransitionPresets.SlideFromRightIOS,
+            }}
+        >
             <Stack.Screen
                 name="TaskList"
                 component={TaskListScreen}
-                options={({ navigation }: { navigation: any }) => getHeaderOptions(theme, navigation, 'Mis Tareas')}
+                options={({ navigation }: { navigation: any }) => getHeaderOptions(theme, navigation, 'Lista de tareas')}
             />
             <Stack.Screen
                 name="TaskDetail"
@@ -62,13 +61,15 @@ function TasksStack() {
             <Stack.Screen
                 name="CreateTask"
                 component={CreateTaskScreen}
-                options={({ navigation }: { navigation: any }) => getHeaderOptions(theme, navigation, 'Nueva Tarea')}
+                options={({ navigation }: { navigation: any }) => ({
+                    ...getHeaderOptions(theme, navigation, 'Nueva tarea'),
+                    ...TransitionPresets.ModalSlideFromBottomIOS,
+                })}
             />
         </Stack.Navigator>
     );
 }
 
-// Drawer Navigator for authenticated users
 function AuthenticatedDrawer() {
     const { theme } = useTheme();
 
@@ -76,7 +77,7 @@ function AuthenticatedDrawer() {
         <Drawer.Navigator
             drawerContent={(props: any) => <CustomDrawer {...props} />}
             screenOptions={{
-                headerShown: false, // We use the inner Stack headers
+                headerShown: false,
                 drawerStyle: {
                     backgroundColor: theme.background,
                 },
@@ -89,25 +90,21 @@ function AuthenticatedDrawer() {
                 name="HomeStack"
                 component={TasksStack}
                 options={{
-                    drawerLabel: 'Home',
+                    drawerLabel: 'Inicio',
                 }}
             />
             <Drawer.Screen
                 name="Profile"
                 component={ProfileScreen}
                 options={({ navigation }: { navigation: any }) => ({
-                    headerShown: true, // Profile is a direct screen, so show Drawer header (or custom)
+                    headerShown: true,
                     ...getHeaderOptions(theme, navigation, 'Perfil'),
-                    // We need to override headerRight because getHeaderOptions adds a menu button, 
-                    // but the Drawer navigator usually provides one if we let it. 
-                    // However, we want consistent styling.
                 })}
             />
         </Drawer.Navigator>
     );
 }
 
-// Drawer for unauthenticated users
 function UnauthenticatedDrawer() {
     const { theme } = useTheme();
 

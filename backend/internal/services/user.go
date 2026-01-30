@@ -1,17 +1,16 @@
 package services
 
 import (
-	"github.com/taskflow/backend/internal/models"
-	"github.com/taskflow/backend/internal/repository"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/models"
 )
 
 // UserService handles user business logic
 type UserService struct {
-	userRepo *repository.UserRepository
+	userRepo UserRepository
 }
 
 // NewUserService creates a new user service
-func NewUserService(userRepo *repository.UserRepository) *UserService {
+func NewUserService(userRepo UserRepository) *UserService {
 	return &UserService{
 		userRepo: userRepo,
 	}

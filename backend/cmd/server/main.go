@@ -3,18 +3,18 @@ package main
 import (
 	"log"
 
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/config"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/database"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/handlers"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/middleware"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/repository"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/services"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/websocket"
 	"github.com/gin-gonic/gin"
-	"github.com/taskflow/backend/internal/config"
-	"github.com/taskflow/backend/internal/database"
-	"github.com/taskflow/backend/internal/handlers"
-	"github.com/taskflow/backend/internal/middleware"
-	"github.com/taskflow/backend/internal/repository"
-	"github.com/taskflow/backend/internal/services"
-	"github.com/taskflow/backend/internal/websocket"
 
+	_ "github.com/IgnacioIbaigorria/taskflow/backend/docs" // Import generated docs
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	_ "github.com/taskflow/backend/docs" // Import generated docs
 )
 
 // @title TaskFlow API

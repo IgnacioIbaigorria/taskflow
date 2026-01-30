@@ -5,9 +5,9 @@ import (
 	"log"
 	"sync"
 
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/taskflow/backend/internal/models"
 )
 
 // Client represents a WebSocket client

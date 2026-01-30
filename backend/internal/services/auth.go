@@ -4,22 +4,31 @@ import (
 	"errors"
 	"time"
 
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/config"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/middleware"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/models"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/taskflow/backend/internal/config"
-	"github.com/taskflow/backend/internal/middleware"
-	"github.com/taskflow/backend/internal/models"
-	"github.com/taskflow/backend/internal/repository"
 )
 
 // AuthService handles authentication business logic
+// UserRepository interface for auth service
+type UserRepository interface {
+	Create(user *models.User) error
+	FindByEmail(email string) (*models.User, error)
+	FindByID(id uuid.UUID) (*models.User, error)
+	EmailExists(email string) (bool, error)
+	List() ([]models.User, error)
+}
+
+// AuthService handles authentication business logic
 type AuthService struct {
-	userRepo *repository.UserRepository
+	userRepo UserRepository
 	config   *config.Config
 }
 
 // NewAuthService creates a new auth service
-func NewAuthService(userRepo *repository.UserRepository, cfg *config.Config) *AuthService {
+func NewAuthService(userRepo UserRepository, cfg *config.Config) *AuthService {
 	return &AuthService{
 		userRepo: userRepo,
 		config:   cfg,

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Modal, TouchableOpacity } from 'react-native';
-import { TextInput, Button, Text } from 'react-native-paper';
+import { TextInput, Button, Text, IconButton } from 'react-native-paper';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../contexts/ThemeContext';
 import { useTasks } from '../contexts/TaskContext';
 import { Priority, PRIORITY_LABELS } from '../models/Task';
@@ -12,6 +13,9 @@ export default function CreateTaskScreen({ navigation }: any) {
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState<Priority>('medium');
     const [showPriorityPicker, setShowPriorityPicker] = useState(false);
+    const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+    const [mode, setMode] = useState<'date' | 'time'>('date');
+    const [show, setShow] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const priorities: Priority[] = ['low', 'medium', 'high', 'urgent'];
@@ -28,6 +32,7 @@ export default function CreateTaskScreen({ navigation }: any) {
                 title: title.trim(),
                 description: description.trim(),
                 priority,
+                due_date: dueDate ? dueDate.toISOString() : undefined,
             });
             navigation.goBack();
         } catch (error) {
@@ -80,7 +85,67 @@ export default function CreateTaskScreen({ navigation }: any) {
                         }}
                     />
 
-                    {/* Priority Picker Button */}
+                    <View style={styles.dateContainer}>
+                        <Button
+                            mode="outlined"
+                            onPress={() => {
+                                setMode('date');
+                                setShow(true);
+                            }}
+                            icon="calendar"
+                            style={[styles.dateButton, { borderColor: theme.inputBorder }]}
+                            textColor={theme.text}
+                        >
+                            {dueDate
+                                ? dueDate.toLocaleString('es-ES', {
+                                    day: '2-digit', month: '2-digit', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit'
+                                })
+                                : 'Sin fecha de vencimiento'}
+                        </Button>
+                        {dueDate && (
+                            <IconButton
+                                icon="close"
+                                size={20}
+                                onPress={() => setDueDate(undefined)}
+                            />
+                        )}
+                    </View>
+
+                    {show && (
+                        <DateTimePicker
+                            testID="dateTimePicker"
+                            value={dueDate || new Date()}
+                            mode={mode}
+                            is24Hour={true}
+                            display="default"
+                            onChange={(event, selectedDate) => {
+                                setShow(false);
+                                if (selectedDate) {
+                                    if (mode === 'date') {
+                                        const currentDate = selectedDate;
+                                        setDueDate(currentDate);
+                                        // On Android/iOS interaction, we might want to trigger time picker next
+                                        // But treating them as separate clicks might be safer for UX if not using a specific lib wrapper.
+                                        // Let's force a "Time" picker opening right after?
+                                        // A common pattern is:
+                                        setMode('time');
+                                        setTimeout(() => setShow(true), 100); // Small delay to allow close/open animation
+                                    } else {
+                                        // Mode is time, so we update the time part of the due date
+                                        const current = dueDate || new Date();
+                                        const newDate = new Date(current);
+                                        newDate.setHours(selectedDate.getHours());
+                                        newDate.setMinutes(selectedDate.getMinutes());
+                                        setDueDate(newDate);
+                                        setMode('date'); // Reset for next time
+                                    }
+                                }
+                            }}
+                            minimumDate={new Date()}
+                        />
+                    )}
+
                     <Button
                         mode="outlined"
                         onPress={() => setShowPriorityPicker(true)}
@@ -190,6 +255,15 @@ const styles = StyleSheet.create({
     },
     priorityButton: {
         marginBottom: 24,
+        borderRadius: 8,
+    },
+    dateContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    dateButton: {
+        flex: 1,
         borderRadius: 8,
     },
     buttons: {

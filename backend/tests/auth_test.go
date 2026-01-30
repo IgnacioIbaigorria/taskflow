@@ -1,13 +1,14 @@
-package services
+package tests
 
 import (
 	"testing"
 
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/config"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/models"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/services"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/taskflow/backend/internal/config"
-	"github.com/taskflow/backend/internal/models"
-	"github.com/google/uuid"
 )
 
 // MockUserRepository is a mock implementation of UserRepository
@@ -41,18 +42,23 @@ func (m *MockUserRepository) EmailExists(email string) (bool, error) {
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockUserRepository) List() ([]models.User, error) {
+	args := m.Called()
+	return args.Get(0).([]models.User), args.Error(1)
+}
+
 func TestRegister_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
-			Secret:                "test-secret",
-			ExpirationHours:       24,
+			Secret:                 "test-secret",
+			ExpirationHours:        24,
 			RefreshExpirationHours: 168,
 		},
 	}
-	service := NewAuthService(mockRepo, cfg)
+	service := services.NewAuthService(mockRepo, cfg)
 
-	req := RegisterRequest{
+	req := services.RegisterRequest{
 		Email:    "test@example.com",
 		Password: "password123",
 		Name:     "Test User",
@@ -78,9 +84,9 @@ func TestRegister_EmailExists(t *testing.T) {
 			Secret: "test-secret",
 		},
 	}
-	service := NewAuthService(mockRepo, cfg)
+	service := services.NewAuthService(mockRepo, cfg)
 
-	req := RegisterRequest{
+	req := services.RegisterRequest{
 		Email:    "existing@example.com",
 		Password: "password123",
 		Name:     "Test User",
@@ -100,12 +106,12 @@ func TestLogin_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
-			Secret:                "test-secret",
-			ExpirationHours:       24,
+			Secret:                 "test-secret",
+			ExpirationHours:        24,
 			RefreshExpirationHours: 168,
 		},
 	}
-	service := NewAuthService(mockRepo, cfg)
+	service := services.NewAuthService(mockRepo, cfg)
 
 	user := &models.User{
 		ID:    uuid.New(),
@@ -115,7 +121,7 @@ func TestLogin_Success(t *testing.T) {
 	user.Password = "password123"
 	user.HashPassword()
 
-	req := LoginRequest{
+	req := services.LoginRequest{
 		Email:    "test@example.com",
 		Password: "password123",
 	}
@@ -138,7 +144,7 @@ func TestLogin_InvalidPassword(t *testing.T) {
 			Secret: "test-secret",
 		},
 	}
-	service := NewAuthService(mockRepo, cfg)
+	service := services.NewAuthService(mockRepo, cfg)
 
 	user := &models.User{
 		ID:    uuid.New(),
@@ -148,7 +154,7 @@ func TestLogin_InvalidPassword(t *testing.T) {
 	user.Password = "correctpassword"
 	user.HashPassword()
 
-	req := LoginRequest{
+	req := services.LoginRequest{
 		Email:    "test@example.com",
 		Password: "wrongpassword",
 	}

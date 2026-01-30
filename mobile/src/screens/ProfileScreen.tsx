@@ -7,10 +7,12 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useTasks } from '../contexts/TaskContext';
 
 export default function ProfileScreen() {
-    const { user, logout, biometricEnabled, toggleBiometric } = useAuth();
+    const { user, logout, biometricUser, toggleBiometric } = useAuth();
     const { theme, isDark, toggleTheme } = useTheme();
     const { tasks } = useTasks();
     const [biometricAvailable, setBiometricAvailable] = useState(false);
+
+    const isBiometricEnabled = !!(user && biometricUser === user.email);
 
     useEffect(() => {
         checkBiometric();
@@ -29,12 +31,11 @@ export default function ProfileScreen() {
         }
 
         const result = await LocalAuthentication.authenticateAsync({
-            promptMessage: biometricEnabled ? 'Deshabilitar autenticación biométrica' : 'Habilitar autenticación biométrica',
+            promptMessage: isBiometricEnabled ? 'Deshabilitar autenticación biométrica' : 'Habilitar autenticación biométrica',
         });
 
         if (result.success) {
-            const newState = !biometricEnabled;
-            console.log('PROFILE DEBUG: Toggling biometric to:', newState);
+            const newState = !isBiometricEnabled;
             await toggleBiometric(newState);
         }
     };
@@ -56,9 +57,10 @@ export default function ProfileScreen() {
 
     const stats = {
         total: tasks.length,
+        created: tasks.filter(t => user && t.created_by === user.id).length,
+        assigned: tasks.filter(t => user && t.assigned_to === user.id).length,
         completed: tasks.filter(t => t.status === 'completed').length,
         pending: tasks.filter(t => t.status === 'pending').length,
-        inProgress: tasks.filter(t => t.status === 'in_progress').length,
     };
 
     return (
@@ -78,19 +80,19 @@ export default function ProfileScreen() {
                 <View style={styles.statsGrid}>
                     <View style={[styles.statCard, { backgroundColor: theme.card }]}>
                         <Text style={[styles.statNumber, { color: theme.primary }]}>{stats.total}</Text>
-                        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total de tareas</Text>
+                        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.statNumber, { color: theme.text }]}>{stats.created}</Text>
+                        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Creadas</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.statNumber, { color: theme.info }]}>{stats.assigned}</Text>
+                        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Asignadas a mí</Text>
                     </View>
                     <View style={[styles.statCard, { backgroundColor: theme.card }]}>
                         <Text style={[styles.statNumber, { color: theme.success }]}>{stats.completed}</Text>
                         <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completadas</Text>
-                    </View>
-                    <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-                        <Text style={[styles.statNumber, { color: theme.placeholder }]}>{stats.pending}</Text>
-                        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pendientes</Text>
-                    </View>
-                    <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-                        <Text style={[styles.statNumber, { color: theme.info }]}>{stats.inProgress}</Text>
-                        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>En progreso</Text>
                     </View>
                 </View>
             </View>
@@ -108,11 +110,11 @@ export default function ProfileScreen() {
 
                 <List.Item
                     title="Autenticación biométrica"
-                    description={biometricAvailable ? 'Use Face ID or Fingerprint' : 'Not available'}
+                    description={biometricAvailable ? 'Usar Face ID o huella dactilar' : 'No disponible'}
                     left={props => <List.Icon {...props} icon="fingerprint" />}
                     right={() => (
                         <Switch
-                            value={biometricEnabled}
+                            value={isBiometricEnabled}
                             onValueChange={handleToggleBiometric}
                             disabled={!biometricAvailable}
                         />

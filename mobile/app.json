@@ -29,7 +29,8 @@
       "package": "com.taskflow.mobile",
       "permissions": [
         "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
+        "USE_FINGERPRINT",
+        "INTERNET"
       ]
     },
     "web": {
@@ -37,10 +38,21 @@
     },
     "extra": {
       "apiUrl": "http://192.168.0.103:8080",
-      "wsUrl": "ws://192.168.0.103:8080"
+      "wsUrl": "ws://192.168.0.103:8080",
+      "eas": {
+        "projectId": "7ef38088-87cd-41b6-93ca-3c88f5259e55"
+      }
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ]
   }
 }

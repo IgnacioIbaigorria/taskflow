@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/middleware"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/models"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/services"
+	ws "github.com/IgnacioIbaigorria/taskflow/backend/internal/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/taskflow/backend/internal/middleware"
-	"github.com/taskflow/backend/internal/models"
-	"github.com/taskflow/backend/internal/services"
-	ws "github.com/taskflow/backend/internal/websocket"
 )
 
 var upgrader = websocket.Upgrader{
@@ -122,6 +122,12 @@ func (h *TaskHandler) List(c *gin.Context) {
 		if ps, err := strconv.Atoi(pageSize); err == nil {
 			filter.PageSize = ps
 		}
+	}
+	if sortBy := c.Query("sort_by"); sortBy != "" {
+		filter.SortBy = sortBy
+	}
+	if sortOrder := c.Query("sort_order"); sortOrder != "" {
+		filter.SortOrder = sortOrder
 	}
 
 	tasks, total, err := h.taskService.List(userID, filter)

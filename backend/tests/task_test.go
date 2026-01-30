@@ -1,12 +1,13 @@
-package services
+package tests
 
 import (
 	"testing"
 
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/models"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/services"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/taskflow/backend/internal/models"
 )
 
 // MockTaskRepository is a mock implementation of TaskRepository
@@ -55,10 +56,10 @@ func (m *MockTaskRepository) AssignTask(taskID, userID uuid.UUID) error {
 func TestCreateTask_Success(t *testing.T) {
 	mockTaskRepo := new(MockTaskRepository)
 	mockUserRepo := new(MockUserRepository)
-	service := NewTaskService(mockTaskRepo, mockUserRepo)
+	service := services.NewTaskService(mockTaskRepo, mockUserRepo)
 
 	userID := uuid.New()
-	req := CreateTaskRequest{
+	req := services.CreateTaskRequest{
 		Title:       "Test Task",
 		Description: "Test Description",
 		Priority:    models.PriorityHigh,
@@ -88,7 +89,7 @@ func TestCreateTask_Success(t *testing.T) {
 func TestUpdateTask_Success(t *testing.T) {
 	mockTaskRepo := new(MockTaskRepository)
 	mockUserRepo := new(MockUserRepository)
-	service := NewTaskService(mockTaskRepo, mockUserRepo)
+	service := services.NewTaskService(mockTaskRepo, mockUserRepo)
 
 	userID := uuid.New()
 	taskID := uuid.New()
@@ -100,7 +101,7 @@ func TestUpdateTask_Success(t *testing.T) {
 		CreatedBy: userID,
 	}
 
-	req := UpdateTaskRequest{
+	req := services.UpdateTaskRequest{
 		Title: &newTitle,
 	}
 
@@ -117,7 +118,7 @@ func TestUpdateTask_Success(t *testing.T) {
 func TestUpdateTask_Unauthorized(t *testing.T) {
 	mockTaskRepo := new(MockTaskRepository)
 	mockUserRepo := new(MockUserRepository)
-	service := NewTaskService(mockTaskRepo, mockUserRepo)
+	service := services.NewTaskService(mockTaskRepo, mockUserRepo)
 
 	userID := uuid.New()
 	otherUserID := uuid.New()
@@ -130,7 +131,7 @@ func TestUpdateTask_Unauthorized(t *testing.T) {
 		CreatedBy: otherUserID, // Different user
 	}
 
-	req := UpdateTaskRequest{
+	req := services.UpdateTaskRequest{
 		Title: &newTitle,
 	}
 
@@ -147,7 +148,7 @@ func TestUpdateTask_Unauthorized(t *testing.T) {
 func TestDeleteTask_Success(t *testing.T) {
 	mockTaskRepo := new(MockTaskRepository)
 	mockUserRepo := new(MockUserRepository)
-	service := NewTaskService(mockTaskRepo, mockUserRepo)
+	service := services.NewTaskService(mockTaskRepo, mockUserRepo)
 
 	userID := uuid.New()
 	taskID := uuid.New()
@@ -169,7 +170,7 @@ func TestDeleteTask_Success(t *testing.T) {
 func TestUpdateStatus_Success(t *testing.T) {
 	mockTaskRepo := new(MockTaskRepository)
 	mockUserRepo := new(MockUserRepository)
-	service := NewTaskService(mockTaskRepo, mockUserRepo)
+	service := services.NewTaskService(mockTaskRepo, mockUserRepo)
 
 	userID := uuid.New()
 	taskID := uuid.New()

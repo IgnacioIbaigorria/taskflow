@@ -3,8 +3,8 @@ package repository
 import (
 	"errors"
 
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/models"
 	"github.com/google/uuid"
-	"github.com/taskflow/backend/internal/models"
 	"gorm.io/gorm"
 )
 

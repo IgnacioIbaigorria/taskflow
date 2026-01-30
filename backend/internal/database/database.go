@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/taskflow/backend/internal/config"
-	"github.com/taskflow/backend/internal/models"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/config"
+	"github.com/IgnacioIbaigorria/taskflow/backend/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

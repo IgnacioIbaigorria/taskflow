@@ -16,6 +16,8 @@ class TaskService {
         if (filter?.priority) params.append('priority', filter.priority);
         if (filter?.page) params.append('page', filter.page.toString());
         if (filter?.page_size) params.append('page_size', filter.page_size.toString());
+        if (filter?.sort_by) params.append('sort_by', filter.sort_by);
+        if (filter?.sort_order) params.append('sort_order', filter.sort_order);
 
         const response = await api.get<TaskListResponse>(`/tasks?${params.toString()}`);
         return response.data;
