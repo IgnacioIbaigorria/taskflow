@@ -142,11 +142,11 @@ go run cmd/server/main.go
 
 | Inicio de Sesión | Lista de Tareas |
 |:---:|:---:|
-| <img src="./taskflow1.jpeg" width="250" /> | <img src="./taskflow2.jpeg" width="250" /> |
+| <img src="./assets/taskflow1.jpeg" width="250" /> | <img src="./assets/taskflow2.jpeg" width="250" /> |
 | **Perfil de Usuario** | **Creación de Tarea** |
-| <img src="./taskflow3.jpeg" width="250" /> | <img src="./taskflow4.jpeg" width="250" /> |
+| <img src="./assets/taskflow3.jpeg" width="250" /> | <img src="./assets/taskflow4.jpeg" width="250" /> |
 | **Menú Interactivo** | **Detalle de Tarea** |
-| <img src="./taskflow5.jpeg" width="250" /> | <img src="./taskflow6.jpeg" width="250" /> |
+| <img src="./assets/taskflow5.jpeg" width="250" /> | <img src="./assets/taskflow6.jpeg" width="250" /> |
 
 ## 📖 Documentación de la API
 
