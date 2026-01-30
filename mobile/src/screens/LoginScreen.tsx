@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { secureStorageService } from '../services/secureStorageService';
 import { storageService } from '../services/storageService';
+import { apiService } from '../services/api';
 
 export default function LoginScreen({ navigation }: any) {
     const { login, loginWithBiometric } = useAuth();
@@ -17,11 +18,21 @@ export default function LoginScreen({ navigation }: any) {
     const [secureTextEntry, setSecureTextEntry] = useState(true);
 
     const [showBiometric, setShowBiometric] = useState(false);
-    const [isUsingPassword, setIsUsingPassword] = useState(false); // New state to toggle views
+    const [isUsingPassword, setIsUsingPassword] = useState(false);
+
+    // Config Modal State
+    const [configVisible, setConfigVisible] = useState(false);
+    const [serverUrl, setServerUrl] = useState('');
 
     useEffect(() => {
         checkBiometricPreference();
+        loadCurrentUrl();
     }, []);
+
+    const loadCurrentUrl = async () => {
+        const url = await apiService.loadBaseUrl();
+        setServerUrl(url.replace('/api/v1', ''));
+    };
 
     const checkBiometricPreference = async () => {
         const bioUser = await storageService.getBiometricUser();
@@ -46,6 +57,7 @@ export default function LoginScreen({ navigation }: any) {
         setIsUsingPassword(false);
         handleBiometricLogin();
     };
+
     const handleBiometricLogin = async () => {
         try {
             const result = await LocalAuthentication.authenticateAsync({
@@ -84,7 +96,6 @@ export default function LoginScreen({ navigation }: any) {
             setLoading(true);
             await login({ email, password });
 
-            // Save credentials if biometric is enabled (user ID is set)
             const bioUser = await storageService.getBiometricUser();
             if (bioUser) {
                 await secureStorageService.saveCredentials({ email, password });
@@ -96,119 +107,184 @@ export default function LoginScreen({ navigation }: any) {
         }
     };
 
+    const saveServerUrl = async () => {
+        if (!serverUrl) return;
+        try {
+            await apiService.setBaseUrl(serverUrl);
+            setConfigVisible(false);
+            Alert.alert('Configuración guardada', 'La URL del servidor se ha actualizado correctamente.');
+        } catch (err) {
+            Alert.alert('Error', 'No se pudo guardar la configuración');
+        }
+    };
+
     return (
         <KeyboardAvoidingView
             style={[styles.container, { backgroundColor: theme.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
+            <View style={styles.topBar}>
+                <IconButton
+                    icon={configVisible ? "close" : "cog"}
+                    iconColor={theme.textSecondary}
+                    size={24}
+                    onPress={() => setConfigVisible(!configVisible)}
+                />
+            </View>
+
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.header}>
-                    <Text style={[styles.title, { color: theme.text }]}>Bienvenido</Text>
-                    <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                        Inicia sesión para continuar
-                    </Text>
-                </View>
-
-                <View style={styles.form}>
-                    {!isUsingPassword && showBiometric ? (
-                        <View style={styles.biometricContainer}>
-                            <IconButton
-                                icon="fingerprint"
-                                size={80}
-                                iconColor={theme.primary}
-                                style={styles.biometricIcon}
-                                onPress={handleBiometricLogin}
-                            />
-                            <Text style={[styles.biometricText, { color: theme.text }]}>
-                                Autenticación biométrica
+                {configVisible ? (
+                    <View style={styles.form}>
+                        <View style={styles.header}>
+                            <Text style={[styles.title, { color: theme.text }]}>Configuración</Text>
+                            <Text style={[styles.subtitle, { color: theme.textSecondary, textAlign: 'center' }]}>
+                                URL del Servidor Backend
                             </Text>
-                            <Button
-                                mode="contained"
-                                onPress={handleBiometricLogin}
-                                style={styles.button}
-                            >
-                                Reintentar
-                            </Button>
-                            <Button
-                                mode="text"
-                                onPress={handleUsePassword}
-                                style={styles.linkButton}
-                            >
-                                Ingresar con contraseña
-                            </Button>
                         </View>
-                    ) : (
-                        <>
-                            <TextInput
-                                label="Correo electrónico"
-                                value={email}
-                                onChangeText={setEmail}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                mode="outlined"
-                                style={styles.input}
-                                placeholder="Correo electrónico"
-                                placeholderTextColor={theme.placeholder}
-                                outlineColor={theme.inputBorder}
-                                activeOutlineColor={theme.inputBorderActive}
-                                textColor={theme.text}
-                            />
 
-                            <TextInput
-                                label="Contraseña"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={secureTextEntry}
-                                mode="outlined"
-                                style={styles.input}
-                                placeholder="Contraseña"
-                                placeholderTextColor={theme.placeholder}
-                                outlineColor={theme.inputBorder}
-                                activeOutlineColor={theme.inputBorderActive}
-                                textColor={theme.text}
-                                right={
-                                    <TextInput.Icon
-                                        icon={secureTextEntry ? "eye" : "eye-off"}
-                                        onPress={() => setSecureTextEntry(!secureTextEntry)}
+                        <Text style={{ color: theme.textSecondary, marginBottom: 10 }}>
+                            Ingresa la dirección IP (ej: http://192.168.1.50:8080)
+                        </Text>
+
+                        <TextInput
+                            label="URL del Servidor"
+                            value={serverUrl}
+                            onChangeText={setServerUrl}
+                            mode="outlined"
+                            style={[styles.input, { backgroundColor: theme.surface }]}
+                            textColor={theme.text}
+                            outlineColor={theme.inputBorder}
+                            activeOutlineColor={theme.inputBorderActive}
+                        />
+
+                        <Button
+                            mode="contained"
+                            onPress={saveServerUrl}
+                            style={styles.button}
+                            icon="content-save"
+                        >
+                            Guardar Configuración
+                        </Button>
+
+                        <Button
+                            mode="text"
+                            onPress={() => setConfigVisible(false)}
+                            style={styles.linkButton}
+                        >
+                            Cancelar
+                        </Button>
+                    </View>
+                ) : (
+                    <>
+                        <View style={styles.header}>
+                            <Text style={[styles.title, { color: theme.text }]}>Bienvenido</Text>
+                            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                                Inicia sesión para continuar
+                            </Text>
+                        </View>
+
+                        <View style={styles.form}>
+                            {!isUsingPassword && showBiometric ? (
+                                <View style={styles.biometricContainer}>
+                                    <IconButton
+                                        icon="fingerprint"
+                                        size={80}
+                                        iconColor={theme.primary}
+                                        style={styles.biometricIcon}
+                                        onPress={handleBiometricLogin}
                                     />
-                                }
-                            />
+                                    <Text style={[styles.biometricText, { color: theme.text }]}>
+                                        Autenticación biométrica
+                                    </Text>
+                                    <Button
+                                        mode="contained"
+                                        onPress={handleBiometricLogin}
+                                        style={styles.button}
+                                    >
+                                        Reintentar
+                                    </Button>
+                                    <Button
+                                        mode="text"
+                                        onPress={handleUsePassword}
+                                        style={styles.linkButton}
+                                    >
+                                        Ingresar con contraseña
+                                    </Button>
+                                </View>
+                            ) : (
+                                <>
+                                    <TextInput
+                                        label="Correo electrónico"
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        mode="outlined"
+                                        style={styles.input}
+                                        placeholder="Correo electrónico"
+                                        placeholderTextColor={theme.placeholder}
+                                        outlineColor={theme.inputBorder}
+                                        activeOutlineColor={theme.inputBorderActive}
+                                        textColor={theme.text}
+                                    />
 
-                            {error ? <HelperText type="error" visible={!!error}>{error}</HelperText> : null}
+                                    <TextInput
+                                        label="Contraseña"
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        secureTextEntry={secureTextEntry}
+                                        mode="outlined"
+                                        style={styles.input}
+                                        placeholder="Contraseña"
+                                        placeholderTextColor={theme.placeholder}
+                                        outlineColor={theme.inputBorder}
+                                        activeOutlineColor={theme.inputBorderActive}
+                                        textColor={theme.text}
+                                        right={
+                                            <TextInput.Icon
+                                                icon={secureTextEntry ? "eye" : "eye-off"}
+                                                onPress={() => setSecureTextEntry(!secureTextEntry)}
+                                            />
+                                        }
+                                    />
 
-                            <Button
-                                mode="contained"
-                                onPress={handleLogin}
-                                loading={loading}
-                                disabled={loading}
-                                style={styles.button}
-                            >
-                                Iniciar sesión
-                            </Button>
+                                    {error ? <HelperText type="error" visible={!!error}>{error}</HelperText> : null}
 
-                            {showBiometric && (
-                                <Button
-                                    mode="outlined"
-                                    onPress={handleUseBiometric}
-                                    style={[styles.button, { borderColor: theme.primary }]}
-                                    icon="fingerprint"
-                                    textColor={theme.primary}
-                                    disabled={loading}
-                                >
-                                    Usar Biometría
-                                </Button>
+                                    <Button
+                                        mode="contained"
+                                        onPress={handleLogin}
+                                        loading={loading}
+                                        disabled={loading}
+                                        style={styles.button}
+                                    >
+                                        Iniciar sesión
+                                    </Button>
+
+                                    {showBiometric && (
+                                        <Button
+                                            mode="outlined"
+                                            onPress={handleUseBiometric}
+                                            style={[styles.button, { borderColor: theme.primary }]}
+                                            icon="fingerprint"
+                                            textColor={theme.primary}
+                                            disabled={loading}
+                                        >
+                                            Usar Biometría
+                                        </Button>
+                                    )}
+
+                                    <Button
+                                        mode="text"
+                                        onPress={() => navigation.navigate('Register')}
+                                        style={styles.linkButton}
+                                    >
+                                        ¿No tienes una cuenta? Registrarse
+                                    </Button>
+                                </>
                             )}
-
-                            <Button
-                                mode="text"
-                                onPress={() => navigation.navigate('Register')}
-                                style={styles.linkButton}
-                            >
-                                ¿No tienes una cuenta? Registrarse
-                            </Button>
-                        </>
-                    )}
-                </View>
+                        </View>
+                    </>
+                )}
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -217,6 +293,12 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    topBar: {
+        position: 'absolute',
+        top: 40,
+        right: 10,
+        zIndex: 10,
     },
     scrollContent: {
         flexGrow: 1,

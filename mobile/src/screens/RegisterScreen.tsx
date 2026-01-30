@@ -66,7 +66,7 @@ export default function RegisterScreen({ navigation }: any) {
         >
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Text style={[styles.title, { color: theme.text }]}>Crear Cuenta</Text>
+                    <Text style={[styles.title, { color: theme.text }]}>Crear cuenta</Text>
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                         Registrate para comenzar
                     </Text>
