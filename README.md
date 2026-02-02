@@ -131,8 +131,8 @@ go run cmd/server/main.go
 2. En la terminal:
    ```bash
    cd mobile
-   npm install
-   npm start
+   yarn install
+   npx expo start
    ```
 3. Escanea el código QR generado en la terminal:
    - **iOS**: Usa la aplicación de Cámara.
