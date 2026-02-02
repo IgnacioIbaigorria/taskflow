@@ -37,8 +37,8 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiUrl": "http://192.168.0.103:8080",
-      "wsUrl": "ws://192.168.0.103:8080",
+      "apiUrl": "http://192.168.0.3:8080",
+      "wsUrl": "ws://192.168.0.3:8080",
       "eas": {
         "projectId": "7ef38088-87cd-41b6-93ca-3c88f5259e55"
       }

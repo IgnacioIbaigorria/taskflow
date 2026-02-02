@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, ReactNode } from 'react';
+import NetInfo from '@react-native-community/netinfo';
 import { useAuth } from './AuthContext';
 import Constants from 'expo-constants';
+import { api } from '../services/api';
 import { taskService } from '../services/taskService';
 import { storageService } from '../services/storageService';
 import { websocketService } from '../services/websocketService';
@@ -31,10 +33,19 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     const { isAuthenticated } = useAuth();
 
     useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            if (state.isConnected === false) {
+                setIsOffline(true);
+            }
+        });
+
         checkNetworkStatus();
         const interval = setInterval(checkNetworkStatus, 10000);
 
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            unsubscribe();
+        };
     }, []);
 
     // New Effect: Sync when coming online
@@ -50,12 +61,25 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
     const checkNetworkStatus = async () => {
         try {
-            const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8080';
+            const state = await NetInfo.fetch();
+            if (!state.isConnected) {
+                setIsOffline(true);
+                return;
+            }
+
+            // Get current base URL dynamically from the API service to ensure we check the correct server
+            // api.defaults.baseURL is like "http://192.168.1.5:8080/api/v1"
+            let baseUrl = api.defaults.baseURL || Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8080';
+
+            // Remove /api/v1 suffix if present to get the root URL for health check
+            if (baseUrl.endsWith('/api/v1')) {
+                baseUrl = baseUrl.replace(/\/api\/v1$/, '');
+            }
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-            const response = await fetch(`${apiUrl}/health`, {
+            const response = await fetch(`${baseUrl}/health`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -67,6 +91,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
             setIsOffline(!response.ok && response.status !== 404);
         } catch (error) {
+            // Only set offline if we haven't successfully fetched tasks recently? 
+            // For now, let's assume if health check fails, we might be having issues.
+            // But to avoid flickering if one check fails, maybe we should be more lenient?
+            // However, fixing the URL should resolve the main cause.
             setIsOffline(true);
         }
     };
@@ -96,6 +124,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             setLoading(true);
             const response = await taskService.getTasks(filter);
 
+            // If we successfully fetched tasks, we are definitely online
+            setIsOffline(false);
+
             if (filter.page === 1) {
                 setTasks(response.tasks);
             } else {
@@ -109,6 +140,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             // Always merge fetched tasks into cache to build offline dataset
             await storageService.mergeTasks(response.tasks);
         } catch (error) {
+            console.log('Error fetching tasks:', error);
+            // If fetch fails, we logicall fall back to offline mode
+            setIsOffline(true);
+
             if (filter.page === 1) {
                 const cachedTasks = await storageService.getTasks();
                 setTasks(cachedTasks);

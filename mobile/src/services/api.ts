@@ -8,6 +8,7 @@ const STORAGE_KEY_API_URL = 'api_url';
 
 class ApiService {
     private api: AxiosInstance;
+    private accessToken: string | null = null;
 
     constructor() {
         this.api = axios.create({
@@ -24,8 +25,13 @@ class ApiService {
         // Request interceptor to add auth token
         this.api.interceptors.request.use(
             async (config) => {
-                const token = await SecureStore.getItemAsync('access_token');
+                // Try memory cache first, then fall back to SecureStore
+                const token = this.accessToken || await SecureStore.getItemAsync('access_token');
                 if (token) {
+                    // Update cache if we found it in storage but not memory (e.g. app restart)
+                    if (!this.accessToken) {
+                        this.accessToken = token;
+                    }
                     config.headers.Authorization = `Bearer ${token}`;
                 }
                 return config;
@@ -53,7 +59,10 @@ class ApiService {
                             });
 
                             const { token } = response.data;
+
+                            // Update both storage and memory cache
                             await SecureStore.setItemAsync('access_token', token);
+                            this.accessToken = token;
 
                             originalRequest.headers.Authorization = `Bearer ${token}`;
                             return this.api(originalRequest);
@@ -63,6 +72,7 @@ class ApiService {
                         await SecureStore.deleteItemAsync('access_token');
                         await SecureStore.deleteItemAsync('refresh_token');
                         await SecureStore.deleteItemAsync('user');
+                        this.accessToken = null;
                         return Promise.reject(refreshError);
                     }
                 }
@@ -70,6 +80,10 @@ class ApiService {
                 return Promise.reject(error);
             }
         );
+    }
+
+    setToken(token: string | null) {
+        this.accessToken = token;
     }
 
     async setBaseUrl(url: string) {

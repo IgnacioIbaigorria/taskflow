@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, apiService } from './api';
 import * as SecureStore from 'expo-secure-store';
 import { AuthResponse, LoginCredentials, RegisterData, User } from '../models/User';
 
@@ -17,6 +17,7 @@ class AuthService {
 
     async logout(keepBiometric: boolean = false): Promise<void> {
         await SecureStore.deleteItemAsync('access_token');
+        apiService.setToken(null);
 
         if (!keepBiometric) {
             await SecureStore.deleteItemAsync('refresh_token');
@@ -36,6 +37,7 @@ class AuthService {
 
     async saveAuthData(authResponse: AuthResponse): Promise<void> {
         await SecureStore.setItemAsync('access_token', authResponse.token);
+        apiService.setToken(authResponse.token);
         await SecureStore.setItemAsync('refresh_token', authResponse.refresh_token);
         await SecureStore.setItemAsync('user', JSON.stringify(authResponse.user));
     }

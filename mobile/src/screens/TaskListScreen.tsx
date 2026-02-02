@@ -458,6 +458,7 @@ export default function TaskListScreen({ navigation }: any) {
 
 
             <FAB
+                testID="create-task-fab"
                 style={[styles.fab, { backgroundColor: theme.primary }]}
                 color={theme.onPrimary}
                 icon="plus"

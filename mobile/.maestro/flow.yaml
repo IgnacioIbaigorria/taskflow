@@ -1,0 +1,22 @@
+appId: com.taskflow.mobile
+---
+- launchApp
+
+# Check for Login Screen elements
+- assertVisible: "Bienvenido"
+- assertVisible: "Login Screen" # Implicit check if we are on the right screen concept
+- tapOn: "login-email-input"
+- inputText: "testuser@example.com"
+- tapOn: "login-password-input"
+- inputText: "securePassword123"
+
+# Attempt Login
+- tapOn: "login-submit-button"
+
+# Note: Without a running backend, this might fail or show an error.
+# If testing against a real backend, uncomment the assertion below:
+# - assertVisible: "create-task-fab"
+
+# For purely frontend smoke test without backend:
+- hideKeyboard
+- assertVisible: "Iniciar sesión"

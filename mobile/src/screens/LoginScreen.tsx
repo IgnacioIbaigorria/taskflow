@@ -214,6 +214,7 @@ export default function LoginScreen({ navigation }: any) {
                             ) : (
                                 <>
                                     <TextInput
+                                        testID="login-email-input"
                                         label="Correo electrónico"
                                         value={email}
                                         onChangeText={setEmail}
@@ -229,6 +230,7 @@ export default function LoginScreen({ navigation }: any) {
                                     />
 
                                     <TextInput
+                                        testID="login-password-input"
                                         label="Contraseña"
                                         value={password}
                                         onChangeText={setPassword}
@@ -251,6 +253,7 @@ export default function LoginScreen({ navigation }: any) {
                                     {error ? <HelperText type="error" visible={!!error}>{error}</HelperText> : null}
 
                                     <Button
+                                        testID="login-submit-button"
                                         mode="contained"
                                         onPress={handleLogin}
                                         loading={loading}
